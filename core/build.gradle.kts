@@ -1,5 +1,5 @@
 plugins {
-    kotlin("jvm") version "2.1.21"
+    kotlin("jvm")
 }
 
 group = "org.opencodespace.wordle"
@@ -9,7 +9,13 @@ repositories {
     mavenCentral()
 }
 
+val quarkusPlatformGroupId: String by project
+val quarkusPlatformArtifactId: String by project
+val quarkusPlatformVersion: String by project
+
 dependencies {
+    implementation(platform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}"))
+    implementation("io.quarkus:quarkus-rest-jackson")
     testImplementation(kotlin("test"))
 }
 
