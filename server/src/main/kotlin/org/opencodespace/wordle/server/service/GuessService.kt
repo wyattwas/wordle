@@ -2,6 +2,7 @@ package org.opencodespace.wordle.server.service
 
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Inject
+import jakarta.transaction.Transactional
 import org.opencodespace.wordle.core.dto.GuessDTO
 import org.opencodespace.wordle.core.filters.GuessFilter
 import org.opencodespace.wordle.core.services.GuessService
@@ -24,25 +25,23 @@ class GuessService : GuessService {
     override fun getGuesses() = guessRepository.listAll().map { it.toDTO() }
 
     override fun getGuesses(filter: GuessFilter): List<GuessDTO> {
-        return guessRepository.listAll().filter { filter.date == null || it.date == filter.date }
+        return guessRepository.listAll().asSequence().filter { filter.date == null || it.date == filter.date }
             .filter { filter.index == null || it.index == filter.index }
             .filter { filter.word == null || it.word == filter.word }
             .filter { filter.points == null || it.points == filter.points }
             .filter { filter.correct == null || it.isCorrect == filter.correct }
-            .filter { filter.userId == null || it.user.id == filter.userId }.map { it.toDTO() }
+            .filter { filter.userId == null || it.user.id == filter.userId }.map { it.toDTO() }.toList()
     }
 
+    @Transactional
     override fun createGuess(guess: GuessDTO): GuessDTO? {
         val entity = guess.toEntity(userRepository)
         guessRepository.persist(entity)
         return entity?.toDTO()
     }
 
-    override fun updateGuess(id: Long, guess: GuessDTO): GuessDTO? {
-        val entity: GuessEntity? = guessRepository.findById(id)
-        if (entity == null) {
-            throw RuntimeException("Guess not found")
-        }
+    override fun updateGuess(id: Long, guess: GuessDTO): GuessDTO {
+        val entity: GuessEntity = guessRepository.findById(id) ?: throw RuntimeException("Guess not found")
 
         entity.date = guess.date
         entity.index = guess.index

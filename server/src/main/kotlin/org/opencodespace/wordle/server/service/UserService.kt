@@ -2,6 +2,7 @@ package org.opencodespace.wordle.server.service
 
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Inject
+import jakarta.transaction.Transactional
 import org.opencodespace.wordle.core.dto.UserDTO
 import org.opencodespace.wordle.core.filters.UserFilter
 import org.opencodespace.wordle.core.services.UserService
@@ -22,22 +23,20 @@ class UserService : UserService {
     override fun getUsers() = userRepository.listAll().map { it.toDTO() }
 
     override fun getUsers(filter: UserFilter) =
-        userRepository.listAll().filter { filter.name == null || it.name == filter.name }
+        userRepository.listAll().asSequence().filter { filter.name == null || it.name == filter.name }
             .filter { filter.handle == null || it.handle == filter.handle }
             .filter { filter.platform == null || it.platform === filter.platform }
-            .filter { filter.score == null || it.score == filter.score }.map { it.toDTO() }
+            .filter { filter.score == null || it.score == filter.score }.map { it.toDTO() }.toList()
 
+    @Transactional
     override fun createUser(userDTO: UserDTO): UserDTO {
         val entity: UserEntity = userDTO.toEntity()
         userRepository.persist(entity)
         return entity.toDTO()
     }
 
-    override fun updateUser(id: Long, userDTO: UserDTO): UserDTO? {
-        val entity: UserEntity? = userRepository.findById(id)
-        if (entity == null) {
-            throw RuntimeException("User not found")
-        }
+    override fun updateUser(id: Long, userDTO: UserDTO): UserDTO {
+        val entity: UserEntity = userRepository.findById(id) ?: throw RuntimeException("User not found")
 
         entity.name = userDTO.name
         entity.handle = userDTO.handle
