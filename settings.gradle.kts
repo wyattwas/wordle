@@ -2,6 +2,7 @@ rootProject.name = "wordle"
 
 include("core")
 include("server")
+include("client:sdk")
 include("client:discord-bot")
 include("client:matrix-bot")
 
